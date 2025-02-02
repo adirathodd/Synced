@@ -34,9 +34,9 @@ A unified platform for planning, scheduling, and analyzing social media content 
 
 ## Tech Stack
 
-- **Frontend:** React / Vue.js / Angular (choose one based on preference)
-- **Backend:** Node.js / Python (Flask/Django) / Ruby on Rails
-- **Database:** PostgreSQL / MongoDB
-- **Cloud:** AWS / Google Cloud / Azure
-- **AI & Analytics:** TensorFlow / PyTorch
+- **Frontend:** React / Vue.js / Angular (TBD)
+- **Backend:** Node.js / Python (Flask/Django) (TBD)
+- **Database:** PostgreSQL
+- **Cloud:** AWS
+- **AI & Analytics:** TensorFlow / PyTorch (TBD)
 - **Other Integrations:** Social Media APIs, OAuth for authentication
