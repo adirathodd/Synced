@@ -5,19 +5,12 @@ A unified platform for planning, scheduling, and analyzing social media content 
 ## Table of Contents
 
 - [Features](#features)
-- [Tech Stack](#tech-stack)
 
 ## Features
 
-- **Content Calendar & Planner:**  
-  - Drag-and-drop interface for scheduling posts.
-  - Campaign management with tagging and categorization.
-  - Team collaboration with task assignments and comments.
-
 - **Multi-Platform Scheduling:**  
-  - Bulk scheduling via CSV upload.
   - Connect and manage multiple social media accounts (Facebook, Instagram, Twitter, LinkedIn, etc.).
-  - Auto-optimized posting times based on historical data.
+  - Schedule synchronized posts or Auto-optimized posting times based on historical data.
 
 - **Engagement Analytics:**  
   - Real-time tracking of likes, shares, comments, and click-through rates.
@@ -27,16 +20,3 @@ A unified platform for planning, scheduling, and analyzing social media content 
 - **AI-Powered Recommendations:**  
   - Content suggestions including hashtags, captions, and optimal posting times.
   - Insights for improving future campaigns based on engagement trends.
-
-- **Integrations & Automation:**  
-  - API and webhooks for seamless integration with CRM, email marketing, and other tools.
-  - Automated reporting and alerts for key performance indicators.
-
-## Tech Stack
-
-- **Frontend:** React / Vue.js / Angular (TBD)
-- **Backend:** Node.js / Python (Flask/Django) (TBD)
-- **Database:** PostgreSQL
-- **Cloud:** AWS
-- **AI & Analytics:** TensorFlow / PyTorch (TBD)
-- **Other Integrations:** Social Media APIs, OAuth for authentication
