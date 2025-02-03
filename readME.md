@@ -5,6 +5,7 @@ A unified platform for planning, scheduling, and analyzing social media content 
 ## Table of Contents
 
 - [Features](#features)
+- [Tech-Stack]{#tech-stack}
 
 ## Features
 
@@ -20,3 +21,7 @@ A unified platform for planning, scheduling, and analyzing social media content 
 - **AI-Powered Recommendations:**  
   - Content suggestions including hashtags, captions, and optimal posting times.
   - Insights for improving future campaigns based on engagement trends.
+
+## Tech-sttack
+ - Frontend: TBD
+ - Backend: Python
