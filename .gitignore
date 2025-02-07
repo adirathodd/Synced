@@ -1,2 +1,3 @@
 api/.venv
+api/helpers/__pycache__
 api/helpers/.env
