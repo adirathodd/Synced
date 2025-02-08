@@ -1,5 +1,5 @@
-from utils import users_req, users_opt
-import database
+from .utils import users_req, users_opt
+from .database import *
 
 class User:
     def __init__(self, properties: dict):
@@ -23,7 +23,7 @@ class User:
                 if arg not in cols:
                     return (False, f"Unknown property: {arg}")
                 
-            db = database.Database()
+            db = Database()
 
             return db.update_user(self.properties['id'], kwargs)
         except Exception as e:
@@ -31,8 +31,7 @@ class User:
     
     def delete(self):
         try:
-            id = self.properties['id']
-            db = database.Database()
-            return db.delete_user(id)
+            db = Database()
+            return db.delete_user(self.properties['id'])
         except Exception as e:
             return (False, f"Failed to delete user: {e}")

@@ -3,7 +3,7 @@ import botocore
 import botocore.exceptions
 from dotenv import load_dotenv
 import os
-from utils import *
+from .utils import is_image, is_video
 
 load_dotenv()
 
@@ -74,7 +74,7 @@ class AWS:
             else:
                 return (False, 'Not a valid filetype!')
             
-            s3_key += f'{filename}'
+            s3_key += f'{os.path.basename(filename)}'
 
             code, message = self.key_exists(s3_key)
 

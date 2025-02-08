@@ -1,10 +1,10 @@
 import psycopg2
 from dotenv import load_dotenv
 import os
-from utils import users_uniq, users_req, users_opt, files_opt, files_req, files_uniq, files_cols, users_cols
-from user import User
-from file import File
-from AWS import AWS
+from .utils import users_uniq, users_req, users_opt, files_opt, files_req, files_uniq, files_cols, users_cols
+from .user import User
+from .file import File
+from .AWS import AWS
 
 # Load environment variables from .env
 load_dotenv()
@@ -61,7 +61,7 @@ class Database:
             result = self.cursor.execute(str(query), values)
             
             if not result:
-                return self.get_user(storage_id = properties['storage_id'])
+                return (True, "user created successfully")
             
             return (False, f"Something went wrong: {result}")
 
@@ -83,7 +83,7 @@ class Database:
             if not res:
                 return (True, "User updated successfully!")
 
-            return (False, "Something went wrong.")
+            return (False, f"Something went wrong: {res}")
         except Exception as e:
             return (False, f"Error updating the user fields: {e}")
 
@@ -113,7 +113,7 @@ class Database:
             
             properties = {}
             
-            for idx, name in enumerate(users_req + users_opt):
+            for idx, name in enumerate(['id'] + users_req + users_opt):
                 properties[name] = res[0][idx]
 
             user = User(properties)
@@ -121,9 +121,23 @@ class Database:
         except Exception as e:
             return (False, f"Failed to get user: {e}", None)
 
-    def delete_user(self, id: int):
+    def delete_user(self, id: int = None, email: str = None, username: str = None):
         try:
-            query = f'DELETE from users WHERE id = {id};'
+            if id:
+                query = f'DELETE from users WHERE id = {id};'
+            elif email:
+                query = f'DELETE from users WHERE email = {email};'
+            elif username:
+                query = f'DELETE from users WHERE username = {username};'
+            else:
+                return (False, "Missing parameters: id, email, username")
+
+            res = self.cursor.execute(query)
+            
+            if not res:
+                return (True, "Successfully deleted user!")
+            
+            return (False, f"Something went wrong: {res}")
         except Exception as e:
             return (False, f"Failed to delete user: {e}")
 
@@ -150,12 +164,8 @@ class Database:
                     if key !=key not in files_cols:
                         return (False, f"Unknown property: {key}", None)
                     
-                    if type(value) == int:
-                        query = "SELECT * FROM files WHERE %s = %s;"
-                    else:
-                        query = "SELECT * FROM files WHERE %s = '%s';"
-
-                    res = self.cursor.execute(query, (key, value,))
+                    query = f"SELECT * FROM files WHERE {key} = %s;"
+                    res = self.cursor.execute(query, (value,))
 
                 res = self.cursor.fetchall()
 
@@ -202,6 +212,9 @@ class Database:
             res = self.cursor.execute(query, (properties['user_id'],))
             res = self.cursor.fetchall()
 
+            if len(res) < 1:
+                return (False, f"No matching user found with id {properties['user_id']}: {res}", None)
+
             result, message = aws_bucket.upload_file(res[0][0], properties['filename'])
 
             if not result:
@@ -222,3 +235,53 @@ class Database:
             return (False, f"Something went wrong: {result}")
         except Exception as e:
             return (False, f"Unable to upload file: {e}")
+    
+    def delete_file(self, file_id, user_id, filename):
+        try:
+            query = ''' 
+                        SELECT username
+                        FROM users 
+                        WHERE id = %s;
+                    '''
+
+            res = self.cursor.execute(query, (user_id,))
+            res = self.cursor.fetchall()
+
+            if len(res) < 1:
+                return (False, f"No matching user found with id {user_id}: {res}")
+            
+            username = res[0][0]
+            
+            res, message = aws_bucket.delete_file(username, filename)
+
+            if not res:
+                return (False, f"Failed to delete file: {message}")
+            
+            query = f'DELETE from files WHERE file_id = {file_id};'
+            res = self.cursor.execute(query)
+            
+            if not res:
+                return (True, "Successfully deleted file!")
+            
+            return (False, f"Something went wrong: {res}")
+        except Exception as e:
+            return (False, f"Something went wrong: {e}")
+    
+    def update_file(self, file_id, updates):
+        try:
+            query = 'UPDATE files SET '
+
+            for key, value in updates.items():
+                query += f"{key} = '{value}', "
+
+            query = query[:-2]
+            query += f" WHERE file_id = {file_id};"
+
+            res = self.cursor.execute(query)
+
+            if not res:
+                return (True, "File updated successfully!")
+
+            return (False, f"Something went wrong: {res}")
+        except Exception as e:
+            return (False, f"Something went wrong: {e}")

@@ -14,28 +14,39 @@ from database import Database
 # '''
 
 if __name__ == '__main__':
-    # user Test case
-    # properties = {  'id': 0,
-    #                 "username": 'adirathod99',
-    #                 'email': 'adirathod99@gmail.com',
-    #                 'password': 'Aditya1108!',
-    #                 'first_name': 'Adi',
-    #                 'middle_name': "A",
-    #                 'last_name': 'Rathod'
-    #             }
+        # user Test case
 
-    db = Database()
-    # # print(db.create_user(properties))
-    # res, message, files = db.get_user(username = 'adirathod99')
-    # # res, message = object.update(first_name = "Adi", email = "adirathod99@gmail.com")
+        properties = {  
+                        "username": 'adirathod99',
+                        'email': 'adirathod99@gmail.com',
+                        'password': 'Aditya1108!',
+                        'first_name': 'Adi',
+                        'middle_name': None,
+                        'last_name': 'Rathod'
+                    }
 
-   # files test case
+        db = Database()
+        print(db.create_user(properties))
+        res, message, obj = db.get_user(username = 'adirathod99')
+        res, message = obj.update(first_name = "Adi", email = "adirathod99@gmail.com")
 
-    properties = {
-            'storage_id': 1,
-            'user_id': 1,
-            'filename': '/Users/adirathodd/Desktop/synced.JPG',
-            'filetype': 'JPG'
-    }
+        # files test case
 
-    print(db.create_file(properties))
+        # properties = {
+        #         'file_id': 1,
+        #         'user_id': 1,
+        #         'filename': '/Users/adirathodd/Desktop/synced.JPG',
+        #         'filetype': 'JPG'
+        # }
+        
+        # # print(db.delete_file(1, 1, '/Users/adirathodd/Desktop/synced.JPG'))
+        # print(db.create_file(properties))
+
+        # res, message, files = db.get_files(user_id = 1)
+
+        # print(res, message, files)
+
+        # if res:
+        #         for file in files:
+        #                 print(file.properties)
+        #                 print(file.delete())
