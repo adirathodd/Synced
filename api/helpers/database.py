@@ -86,6 +86,18 @@ class Database:
             return (False, f"Something went wrong: {res}")
         except Exception as e:
             return (False, f"Error updating the user fields: {e}")
+    
+    def verify_email(self, email):
+        try:
+            query = "UPDATE users SET is_verified = True WHERE email = %s;"
+            res = self.cursor.execute(query, (email,))
+
+            if not res:
+                return (True, "User updated successfully!")
+
+            return (False, f"Something went wrong: {res}")
+        except Exception as e:
+            return (False, f"Something went wrong: {e}")
 
     def get_user(self, **kwargs):
         try:

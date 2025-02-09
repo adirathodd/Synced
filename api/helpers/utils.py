@@ -4,6 +4,7 @@ from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 import os
+import datetime
 import jwt
 from dotenv import load_dotenv
 
@@ -36,9 +37,10 @@ files_cols = set(files_opt + files_req)
 
 
 def create_email_text(email: str) -> str:
-    data = {"sub": email}
+    expiration_time = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=30)
+    data = {"email": email, "exp": expiration_time}
     token = jwt.encode(data, os.getenv('jwt_key'), algorithm=os.getenv('jwt_algo'))
-    verification_link = f"https://localhost:8000/verify?token={token}"
+    verification_link = f"http://localhost:8000/verify/{token}"
 
     email_text = f'''
     <!DOCTYPE html>
