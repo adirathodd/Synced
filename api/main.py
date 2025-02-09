@@ -33,7 +33,8 @@ async def register(item: RegisterItem):
         if not re.search(r'[\w.]+\@[\w.]+', items['email']):
             return {"message": "invalid email address"}
         
-        email = items['email']; username = items['username']
+        # validate middle name field
+        items['middle_name'] = None if len(items['middle_name'].strip()) == 0 else items['middle_name']
 
         # Encrypt password
         items['password'] = fernet.encrypt(items['password'].encode()).decode()
@@ -56,7 +57,7 @@ async def register(item: RegisterItem):
             return {"message": message}
         
         # Send verification email
-        res = send_verification_email(email)
+        res = send_verification_email(items['email'])
 
         if not res:
             db.delete_user(email=items['email'])
