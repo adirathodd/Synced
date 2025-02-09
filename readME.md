@@ -5,7 +5,7 @@ A unified platform for planning, scheduling, and analyzing social media content 
 ## Table of Contents
 
 - [Features](#features)
-- [Tech-Stack]{#tech-stack}
+- [Tech-Stack](#tech-stack)
 
 ## Features
 
@@ -24,4 +24,4 @@ A unified platform for planning, scheduling, and analyzing social media content 
 
 ## Tech-sttack
  - Frontend: TBD
- - Backend: Python
+ - Backend: Python, FastAPI, Supabase DB, AWS S3
