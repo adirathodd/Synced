@@ -27,34 +27,45 @@ class RegisterItem(BaseModel):
 @app.post("/register")
 async def register(item: RegisterItem):
     try:
-        item_dict = item.model_dump()
+        items = item.model_dump()
 
         # Validate email address
-        if not re.search(r'[\w.]+\@[\w.]+', item_dict['email']):
+        if not re.search(r'[\w.]+\@[\w.]+', items['email']):
             return {"message": "invalid email address"}
         
-        email = item_dict['email']; username = item_dict['username']
+        email = items['email']; username = items['username']
 
         # Encrypt password
-        item_dict['password'] = fernet.encrypt(item_dict['password'].encode())
+        items['password'] = fernet.encrypt(items['password'].encode()).decode()
         
         # Add user to database
-        res, message = db.create_user(item_dict)
+        res, message = db.create_user(items)
 
         if not res:
+            if 'duplicate key' in message:
+                paren_start = None; paren_end = None
+                for idx, char in enumerate(message):
+                    if char == '(':
+                        paren_start = idx
+                    elif char == ')':
+                        paren_end = idx
+                        break
+                taken_field = message[paren_start+1:paren_end]
+                message = f"{taken_field} already taken"
+
             return {"message": message}
         
         # Send verification email
         res = send_verification_email(email)
 
         if not res:
-            db.delete_user(email=item_dict['email'])
+            db.delete_user(email=items['email'])
             return {"message": "unable to send verification email try a diff email"}
 
         return {"message": "check email for verification link"}
 
     except Exception as e:
-        print(e)
+        print(str(e))
         return {"message": "something went wrong. try again"}
 
 @app.get("/verify/{token}")
@@ -77,16 +88,33 @@ async def verify(token: str):
     except jwt.ExpiredSignatureError:
         return {"message": "verification link has expired. register again"}
     except Exception as e:
-        print(e)
+        print(str(e))
         return {"message": "invalid verification link"}
 
 class LoginItem(BaseModel):
     username: str
     password: str
 
+# 1 = success, -1 = wrong password, -2 = unknown username, 0 = something went wrong
 @app.post("/login")
 async def login(item: LoginItem):
-    return {"message": "logged in!"}
+    try:
+        items = item.model_dump()
+
+        # check password in database
+        check = db.check_password(items['username'], items['password'])
+
+        if check == -1:
+            return {"message": "wrong password"}
+        elif check == -2:
+            return {"message": "unknown username"}  
+        elif check == 0:
+            return {"message": "something went wrong. try again"}  
+            
+        return {"message": "logged in!"}
+    except Exception as e:
+        print(str(e))
+        return {"message": f"login failed"}
 
 @app.get("/")
 async def root():

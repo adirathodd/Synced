@@ -5,6 +5,7 @@ from .utils import users_uniq, users_req, users_opt, files_opt, files_req, files
 from .user import User
 from .file import File
 from .AWS import AWS
+from cryptography.fernet import Fernet
 
 # Load environment variables from .env
 load_dotenv()
@@ -98,6 +99,28 @@ class Database:
             return (False, f"Something went wrong: {res}")
         except Exception as e:
             return (False, f"Something went wrong: {e}")
+    
+    def check_password(self, username, password):
+        try:
+            query = "SELECT password FROM users WHERE username = %s;"
+            res = self.cursor.execute(query, (username, ))
+            res = self.cursor.fetchall()
+
+            if len(res) == 0:
+                return -2
+
+            real_password = res[0][0]
+            fernet = Fernet(os.getenv('fernet_key'))
+
+            decrypted_password = fernet.decrypt(real_password.encode()).decode()
+
+            if decrypted_password != password:
+                return -1
+            
+            return 1
+        except Exception as e:
+            print(str(e))
+            return 0
 
     def get_user(self, **kwargs):
         try:
