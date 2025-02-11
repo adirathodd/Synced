@@ -111,8 +111,10 @@ async def login(item: LoginItem):
             return {"message": "unknown username"}  
         elif check == 0:
             return {"message": "something went wrong. try again"}  
-            
+        
+        # successful login
         return {"message": "logged in!"}
+
     except Exception as e:
         print(str(e))
         return {"message": f"login failed"}

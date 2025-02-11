@@ -24,4 +24,4 @@ A unified platform for planning, scheduling, and analyzing social media content 
 
 ## Tech-sttack
  - Frontend: TBD
- - Backend: Python, FastAPI, Supabase DB, AWS S3
+ - Backend: Python, FastAPI, Supabase DB, Azure Blob Storage
