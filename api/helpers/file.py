@@ -1,5 +1,5 @@
 from .database import *
-from .utils import files_req, files_opt
+from .util import files_req, files_opt
 
 class File:
     def __init__(self, properties):

@@ -1,73 +1,65 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks, Request
+from fastapi.security import OAuth2PasswordBearer
+from fastapi.responses import JSONResponse
 from typing import Optional
-from pydantic import BaseModel
-import re
-from cryptography.fernet import Fernet
+from pydantic import BaseModel, EmailStr
 from dotenv import load_dotenv
 import os
-from helpers.database import Database
-from helpers.utils import send_verification_email
+from helpers.util import create_access_token
+from helpers.register import *
 import jwt
-from starlette.responses import RedirectResponse
+from helpers.user import UserManager
+from datetime import timedelta
+import logging
 
 load_dotenv()
 
-db = Database()
+logger = logging.getLogger(__name__)
+
+userManager = UserManager()
 app = FastAPI()
-fernet = Fernet(os.getenv('fernet_key'))
+
+# load environment variables
+SECRET_KEY = os.getenv("jwt_key")
+ALGORITHM = os.getenv("jwt_algo")
+
+# OAuth2 scheme for token extraction
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
 class RegisterItem(BaseModel):
     first_name: str
     middle_name: Optional[str] = None
     last_name: str
-    email: str
+    email: EmailStr
     username: str
     password: str
 
-@app.post("/register")
-async def register(item: RegisterItem):
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    detail = exc.detail
+    if isinstance(detail, dict) and 'error' in detail and 'message' in detail:
+        content = detail
+    else:
+        content = {"error": "error", "message": str(detail)}
+    return JSONResponse(status_code=exc.status_code, content=content) 
+
+@app.post("/register", status_code=201)
+async def register(item: RegisterItem, background_tasks: BackgroundTasks):
     try:
-        items = item.model_dump()
+        items = item.dict()
 
-        # Validate email address
-        if not re.search(r'[\w.]+\@[\w.]+', items['email']):
-            return {"message": "invalid email address"}
+        validate_password_complexity(items['password'])
         
-        # validate middle name field
-        items['middle_name'] = None if len(items['middle_name'].strip()) == 0 else items['middle_name']
-
-        # Encrypt password
-        items['password'] = fernet.encrypt(items['password'].encode()).decode()
+        userManager.add_user(items)
         
-        # Add user to database
-        res, message = db.create_user(items)
+        # schedule sending verification email in the background
+        background_tasks.add_task(send_verification_email, items['email'])
 
-        if not res:
-            if 'duplicate key' in message:
-                paren_start = None; paren_end = None
-                for idx, char in enumerate(message):
-                    if char == '(':
-                        paren_start = idx
-                    elif char == ')':
-                        paren_end = idx
-                        break
-                taken_field = message[paren_start+1:paren_end]
-                message = f"{taken_field} already taken"
-
-            return {"message": message}
-        
-        # Send verification email
-        res = send_verification_email(items['email'])
-
-        if not res:
-            db.delete_user(email=items['email'])
-            return {"message": "unable to send verification email try a diff email"}
-
-        return {"message": "check email for verification link"}
+        return {"error": None, "message": "check email for verification link"}
 
     except Exception as e:
-        print(str(e))
-        return {"message": "something went wrong. try again"}
+        logger.error("Error in registration: %s", e)
+        raise HTTPException(status_code=400, detail=e)
 
 @app.get("/verify/{token}")
 async def verify(token: str):
@@ -76,49 +68,56 @@ async def verify(token: str):
         decoded_token = jwt.decode(token, os.getenv('jwt_key'), algorithms=os.getenv('jwt_algo'),  options={"verify_exp": True})
 
         # update table in database
-        res, message = db.verify_email(decoded_token['email'])
+        res, message = userManager.verify_email(decoded_token['email'])
 
-        if not res:
-            message = "failed to verify your email"
-        else:
-            message = "your email has been verified!"
+        message = "your email has been verified!" if res else "failed to verify your email, register again"
 
-        return {"message": message}
+        return {"error": None, "message": message}
 
         # link has expried
     except jwt.ExpiredSignatureError:
-        return {"message": "verification link has expired. register again"}
+        raise HTTPException(status_code=400,detail={"error": "link_expired", "message": "Verification link has expired. Please register again."})
+    
     except Exception as e:
-        print(str(e))
-        return {"message": "invalid verification link"}
+        logger.error("Error in verification: %s", e)
+        raise HTTPException(status_code=400,detail={"error": "invalid_token", "message": "Invalid verification link."})
 
 class LoginItem(BaseModel):
     username: str
     password: str
 
-# 1 = success, -1 = wrong password, -2 = unknown username, 0 = something went wrong
 @app.post("/login")
 async def login(item: LoginItem):
     try:
         items = item.model_dump()
 
         # check password in database
-        check = db.check_password(items['username'], items['password'])
-
-        if check == -1:
-            return {"message": "wrong password"}
-        elif check == -2:
-            return {"message": "unknown username"}  
-        elif check == 0:
-            return {"message": "something went wrong. try again"}  
-        
-        # successful login
-        return {"message": "logged in!"}
+        userManager.verify(items['username'], items['password'])
+        access_token = create_access_token(
+            data={"sub": item.username},
+            expires_delta=timedelta(minutes=30)
+        )
+        return {"access_token": access_token, "token_type": "bearer"}
 
     except Exception as e:
-        print(str(e))
-        return {"message": f"login failed"}
+        logger.error("Error in login: %s", e)
+        raise HTTPException(status_code=500, detail={"error": "server_error", "message": f"{str(e)}"})
 
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
+
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    """Validate JWT bearer token and return the username."""
+    credentials_exception = HTTPException(status_code=401,detail="Could not validate credentials",headers={"WWW-Authenticate": "Bearer"},)
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+    except jwt.PyJWTError:
+        raise credentials_exception
+    return username
+
+##################### Protected Routes (Logged in) #####################
+

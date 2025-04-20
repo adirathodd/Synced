@@ -3,7 +3,7 @@ import botocore
 import botocore.exceptions
 from dotenv import load_dotenv
 import os
-from .utils import is_image, is_video
+from .util import is_image, is_video
 
 load_dotenv()
 

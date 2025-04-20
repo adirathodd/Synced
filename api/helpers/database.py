@@ -1,7 +1,7 @@
 import psycopg2
 from dotenv import load_dotenv
 import os
-from .utils import users_uniq, users_req, users_opt, files_opt, files_req, files_uniq, files_cols, users_cols
+from .util import users_uniq, users_req, users_opt, files_opt, files_req, files_uniq, files_cols, users_cols
 from .user import User
 from .file import File
 from .AWS import AWS

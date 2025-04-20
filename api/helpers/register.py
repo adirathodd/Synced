@@ -1,4 +1,4 @@
-import mimetypes
+from pydantic_core import PydanticCustomError
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
@@ -8,33 +8,26 @@ import datetime
 import jwt
 from dotenv import load_dotenv
 
-################ AWS HELPER ########################
-
-def get_mime_type(filepath):
-    mime_type, _ = mimetypes.guess_type(filepath)
-    return mime_type
-
-def is_image(filepath):
-    mime_type = get_mime_type(filepath)
-    return mime_type is not None and mime_type.startswith('image')
-
-def is_video(filepath):
-    mime_type = get_mime_type(filepath)
-    return mime_type is not None and mime_type.startswith('video')
-
-################ Database columns ################
-users_uniq = ['id', 'username', 'email']
-users_req = ['username', 'email', 'password', 'first_name', 'last_name']
-users_opt = ['middle_name', 'is_verified']
-users_cols = set(users_opt + users_req)
-
-files_uniq = ['file_id']
-files_req = ['file_id', 'user_id', 'filename', 'filetype']
-files_opt = ['uploaded_at']
-files_cols = set(files_opt + files_req)
-
-################ EMAIL ########################
-
+def validate_password_complexity(password: str) -> str:
+        """
+        Enforce a minimum password complexity:
+        - at least 8 characters
+        - at least one uppercase letter
+        - at least one lowercase letter
+        - at least one digit
+        - at least one special character
+        """
+        if len(password) < 8:
+            raise PydanticCustomError('password.too_short', 'Password must be at least 8 characters long')
+        if not any(c.isupper() for c in password):
+            raise PydanticCustomError('password.uppercase', 'Password must contain at least one uppercase letter')
+        if not any(c.islower() for c in password):
+            raise PydanticCustomError('password.lowercase', 'Password must contain at least one lowercase letter')
+        if not any(c.isdigit() for c in password):
+            raise PydanticCustomError('password.digit', 'Password must contain at least one digit')
+        if not any(c in '!@#$%^&*()-_=+[{]}\\|;:\'",<.>/?`~' for c in password):
+            raise PydanticCustomError('password.special', 'Password must contain at least one special character')
+        return password
 
 def create_email_text(email: str) -> str:
     expiration_time = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=30)
@@ -49,61 +42,68 @@ def create_email_text(email: str) -> str:
         <meta charset="utf-8" />
         <title>Verification Email</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="color-scheme" content="light dark" />
+        <meta name="supported-color-schemes" content="light dark" />
         <style>
-          body {{
-            border-radius: 100px;
+        body {{
+            border-radius: 0;
             margin: 0;
             padding: 20px;
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-          }}
-          .email-container {{
+            background-color: #FFFFFF;
+            color: #000000;
+        }}
+        .email-container {{
             border-radius: 20px;
             max-width: 600px;
             margin: 0 auto;
-            background-color: #ffffff;
-          }}
-          .header {{
+            background-color: #3A3A3A;
+            overflow: hidden;
+        }}
+        .header {{
             padding: 20px;
             text-align: center;
-            background-color: #f0f5f5;
-          }}
-          .content {{
+            background-color: #444444;
+        }}
+        .content {{
             padding: 20px;
-            color: #333333;
-          }}
-          p {{
+            color: #E0E0E0;
+        }}
+        p {{
             line-height: 1.5;
-          }}
-          .button-container {{
+            color: inherit;
+        }}
+        .button-container {{
             text-align: center;
             margin: 30px 0;
-          }}
-          .cta-button {{
+        }}
+        .cta-button {{
             background-color: #2c7a7b;
-            color: #ffffff;
+            color: #ffffff !important;
             padding: 15px 25px;
             text-decoration: none;
             font-size: 16px;
             border-radius: 20px;
-          }}
-          .cta-button:hover {{
+            display: inline-block;
+        }}
+        .cta-button:hover {{
             background-color: #285e5f;
-          }}
-          .footer {{
-            background-color: #f0f5f5;
+            color: #ffffff !important;
+        }}
+        .footer {{
+            background-color: #444444;
             border-radius: 20px;
             text-align: center;
             padding: 10px;
-            color: #888;
+            color: #888888;
             font-size: 12px;
-          }}
+        }}
         </style>
       </head>
-      <body>
-        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+      <body bgcolor="#FFFFFF" style="background-color: #FFFFFF !important;">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#FFFFFF" style="background-color: #FFFFFF !important; border-collapse: collapse !important;">
           <tr>
-            <td>
+            <td style="padding: 0; margin: 0;">
               <div class="email-container">        
                 <div class="content">
                   <h2>Verify Your Email!</h2>

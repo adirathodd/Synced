@@ -1,4 +1,4 @@
-from database import Database
+from util import send_verification_email
 
 # engine = Database()
 
@@ -16,19 +16,19 @@ from database import Database
 if __name__ == '__main__':
         # user Test case
 
-        properties = {  
-                        "username": 'adirathod99',
-                        'email': 'adirathod99@gmail.com',
-                        'password': 'Aditya1108!',
-                        'first_name': 'Adi',
-                        'middle_name': None,
-                        'last_name': 'Rathod'
-                    }
+        # properties = {  
+        #                 "username": 'adirathod99',
+        #                 'email': 'adirathod99@gmail.com',
+        #                 'password': 'Aditya1108!',
+        #                 'first_name': 'Adi',
+        #                 'middle_name': None,
+        #                 'last_name': 'Rathod'
+        #             }
 
-        db = Database()
-        print(db.create_user(properties))
-        res, message, obj = db.get_user(username = 'adirathod99')
-        res, message = obj.update(first_name = "Adi", email = "adirathod99@gmail.com")
+        # db = Database()
+        # print(db.create_user(properties))
+        # res, message, obj = db.get_user(username = 'adirathod99')
+        # res, message = obj.update(first_name = "Adi", email = "adirathod99@gmail.com")
 
         # files test case
 
@@ -50,3 +50,5 @@ if __name__ == '__main__':
         #         for file in files:
         #                 print(file.properties)
         #                 print(file.delete())
+
+    send_verification_email("adirathod99@gmail.com")
