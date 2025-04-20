@@ -173,9 +173,10 @@ class UserManager:
             if not response.data:
                 raise KeyError(f"no user found with email: {email}")
 
-            return (True, "email verified!")
+            return
         except Exception as e:
-            return (False, f"error verifying the email: {e}")
+            logger.error(f"error verifying the email {str(e)}")
+            raise e
 
 if __name__ == '__main__':
     um = UserManager()

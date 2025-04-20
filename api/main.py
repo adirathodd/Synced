@@ -6,7 +6,7 @@ from pydantic import BaseModel, EmailStr
 from dotenv import load_dotenv
 import os
 from helpers.util import create_access_token
-from helpers.register import *
+from helpers.register import send_verification_email, validate_password_complexity
 import jwt
 from helpers.user import UserManager
 from datetime import timedelta
@@ -49,13 +49,12 @@ async def register(item: RegisterItem, background_tasks: BackgroundTasks):
         items = item.dict()
 
         validate_password_complexity(items['password'])
-        
         userManager.add_user(items)
         
         # schedule sending verification email in the background
         background_tasks.add_task(send_verification_email, items['email'])
 
-        return {"error": None, "message": "check email for verification link"}
+        return {"message": "check email for verification link"}
 
     except Exception as e:
         logger.error("Error in registration: %s", e)
@@ -68,11 +67,8 @@ async def verify(token: str):
         decoded_token = jwt.decode(token, os.getenv('jwt_key'), algorithms=os.getenv('jwt_algo'),  options={"verify_exp": True})
 
         # update table in database
-        res, message = userManager.verify_email(decoded_token['email'])
-
-        message = "your email has been verified!" if res else "failed to verify your email, register again"
-
-        return {"error": None, "message": message}
+        userManager.verify_email(decoded_token['email'])
+        return {"message": "your email has been verified!"}
 
         # link has expried
     except jwt.ExpiredSignatureError:
